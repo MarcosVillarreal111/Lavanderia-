@@ -1,0 +1,836 @@
+colors: {
+  espuma: {
+    yellow: '#F5D25F',
+    'yellow-dark': '#E6BE3A',
+    navy: '#1B2540',
+    cream: '#FBF8F1',
+    muted: '#6B7280',
+    green: '#25D366',
+  },
+},
+fontFamily: {
+  sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+},
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ $title ?? 'Espuma' }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
+</head>
+<body class="font-sans bg-espuma-cream text-espuma-navy antialiased">
+<div class="flex min-h-screen">
+
+    {{-- Sidebar --}}
+    <aside class="hidden md:flex w-60 flex-col border-r border-espuma-navy/15 bg-white">
+        <div class="h-16 flex items-center px-6 border-b border-espuma-navy/15">
+            <span class="text-lg font-extrabold tracking-tight">Espuma</span>
+        </div>
+
+        <p class="px-6 pt-6 pb-2 text-xs font-medium text-espuma-muted">Mi cuenta</p>
+
+        <nav class="px-3 space-y-1 text-sm font-semibold">
+            @php
+                $links = [
+                    ['route' => 'dashboard', 'label' => 'Inicio', 'icon' => 'M3 12l9-9 9 9M5 10v10h14V10'],
+                    ['route' => 'pedidos.index', 'label' => 'Mis pedidos', 'icon' => 'M21 16V8l-9-5-9 5v8l9 5 9-5z'],
+                    ['route' => 'pagos.index', 'label' => 'Pagos', 'icon' => 'M2 7h20v10H2z', 'badge' => $pagosPendientes ?? 0],
+                    ['route' => 'direcciones.index', 'label' => 'Direcciones', 'icon' => 'M12 21s-7-6.1-7-11a7 7 0 0114 0c0 4.9-7 11-7 11z'],
+                    ['route' => 'profile.show', 'label' => 'Perfil', 'icon' => 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0'],
+                ];
+            @endphp
+
+            @foreach ($links as $link)
+                @php $activo = request()->routeIs($link['route']) @endphp
+                <a href="{{ route($link['route']) }}"
+                   class="flex items-center justify-between rounded-lg px-3 py-2.5 transition
+                          {{ $activo ? 'bg-espuma-navy text-espuma-yellow' : 'hover:bg-espuma-navy/5' }}">
+                    <span class="flex items-center gap-3">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="{{ $link['icon'] }}"/>
+                        </svg>
+                        {{ $link['label'] }}
+                    </span>
+                    @if (!empty($link['badge']))
+                        <span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-espuma-yellow px-1.5 text-xs font-bold text-espuma-navy">
+                            {{ $link['badge'] }}
+                        </span>
+                    @endif
+                </a>
+            @endforeach
+        </nav>
+
+        <div class="mt-auto flex items-center gap-3 border-t border-espuma-navy/15 p-4">
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-espuma-yellow text-xs font-bold">
+                {{ auth()->user()->initials ?? 'MG' }}
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="truncate text-sm font-bold">{{ auth()->user()->name }}</p>
+                <p class="text-xs text-espuma-muted">Cliente desde {{ auth()->user()->created_at->year }}</p>
+            </div>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button class="text-espuma-muted hover:text-espuma-navy" title="Salir">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M15 3h4v18h-4M10 17l5-5-5-5M15 12H3"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    {{-- Contenido --}}
+    <div class="flex-1 min-w-0 flex flex-col">
+        <header class="flex h-16 items-center justify-between border-b border-espuma-navy/15 bg-white px-6 md:px-8">
+            <h1 class="text-xl font-extrabold tracking-tight">{{ $heading ?? '' }}</h1>
+            {{ $acciones ?? '' }}
+        </header>
+
+        <main class="p-6 md:p-8">
+            {{ $slot }}
+        </main>
+    </div>
+</div>
+
+@livewireScripts
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Espuma · Lavandería a domicilio</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="font-sans text-espuma-navy antialiased">
+<section class="relative min-h-screen bg-espuma-yellow overflow-hidden">
+    <img src="{{ asset('img/lavanderia.jpg') }}" alt=""
+         class="absolute inset-0 h-full w-full object-cover mix-blend-multiply opacity-40">
+
+    <div class="relative">
+        <header class="flex items-center justify-between border-b-2 border-espuma-navy px-6 py-5 md:px-12">
+            <span class="text-xl font-extrabold">Espuma</span>
+            <nav class="flex items-center gap-4 text-sm font-bold">
+                <a href="{{ route('register') }}" class="hidden sm:inline">Registro para clientes</a>
+                <span class="hidden sm:inline h-5 border-l-2 border-espuma-navy"></span>
+                <a href="{{ route('login') }}"
+                   class="rounded-lg border-2 border-espuma-navy px-4 py-2 hover:bg-espuma-navy hover:text-espuma-yellow transition">Login</a>
+                <a href="{{ route('register') }}"
+                   class="rounded-lg bg-espuma-navy px-4 py-2 text-espuma-yellow hover:opacity-90 transition">Register</a>
+            </nav>
+        </header>
+
+        <div class="grid gap-12 px-6 py-12 md:grid-cols-2 md:px-12 md:py-20 items-center">
+            <div>
+                <h2 class="text-5xl md:text-6xl font-black leading-[1.05] tracking-tight">
+                    Tu ropa limpia, sin que muevas un dedo.
+                </h2>
+                <p class="mt-6 max-w-md text-lg">
+                    Recogemos, lavamos y entregamos en tu puerta. Crea tu cuenta y agenda tu primer pedido en un minuto.
+                </p>
+                <a href="https://wa.me/{{ config('services.whatsapp.number') }}?text=Quiero%20un%20pedido"
+                   class="mt-8 inline-flex items-center gap-3 rounded-xl border-2 border-espuma-navy bg-espuma-green px-6 py-4 font-bold text-espuma-navy shadow-[4px_4px_0_#1B2540] hover:translate-y-0.5 transition">
+                    Enviar pedido por WhatsApp
+                </a>
+            </div>
+
+            <div class="rounded-2xl border-2 border-espuma-navy bg-white">
+                <h3 class="border-b-2 border-espuma-navy px-6 py-5 text-xl font-extrabold">Tabla de precios</h3>
+                <ul>
+                    @foreach ([
+                        ['Lavado y secado', 'Por kilo, entrega en 48 h', '$3.50'],
+                        ['Planchado', 'Por prenda', '$1.20'],
+                        ['Camisas y blusas', 'Lavadas, planchadas y dobladas', '$2.80'],
+                        ['Edredones y cobijas', 'Por pieza', '$12.00'],
+                        ['Traje completo', 'Tintorería en seco', '$9.00'],
+                        ['Servicio exprés', 'Listo el mismo día', '+50%'],
+                    ] as [$nombre, $detalle, $precio])
+                        <li class="flex items-center justify-between border-b border-espuma-navy/15 px-6 py-4 last:border-0">
+                            <div>
+                                <p class="font-bold">{{ $nombre }}</p>
+                                <p class="text-sm text-espuma-muted">{{ $detalle }}</p>
+                            </div>
+                            <span class="text-lg font-extrabold">{{ $precio }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>
+<x-guest-split title="Login">
+    <h2 class="text-4xl font-extrabold">Login</h2>
+    <p class="mt-2 text-espuma-muted">Entra con el correo de tu cuenta de cliente.</p>
+
+    <x-validation-errors class="mt-6" />
+
+    <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-6">
+        @csrf
+        <div>
+            <x-label for="email" value="Correo electrónico" class="font-bold" />
+            <x-input id="email" type="email" name="email" :value="old('email')" required autofocus
+                     class="mt-2 block w-full rounded-lg border-2 border-espuma-navy px-4 py-3" />
+        </div>
+
+        <div x-data="{ show: false }">
+            <div class="flex justify-between">
+                <x-label for="password" value="Contraseña" class="font-bold" />
+                @if (Route::has('password.request'))
+                    <a href="{{ route('password.request') }}" class="text-sm font-bold underline">¿La olvidaste?</a>
+                @endif
+            </div>
+            <div class="relative mt-2">
+                <x-input id="password" :type="'password'" name="password" required
+                         x-bind:type="show ? 'text' : 'password'"
+                         class="block w-full rounded-lg border-2 border-espuma-navy px-4 py-3 pr-12" />
+                <button type="button" @click="show = !show"
+                        class="absolute inset-y-0 right-3 text-espuma-muted" aria-label="Mostrar contraseña">👁</button>
+            </div>
+        </div>
+
+        <button type="submit"
+                class="w-full rounded-lg bg-espuma-navy py-4 font-bold text-espuma-yellow shadow-[4px_4px_0_#F5D25F] hover:opacity-90">
+            Entrar
+        </button>
+    </form>
+
+    <p class="mt-8 text-center text-sm text-espuma-muted">
+        ¿Primera vez aquí?
+        <a href="{{ route('register') }}" class="font-bold underline">Crea tu cuenta</a>
+    </p>
+</x-guest-split>
+<x-guest-split title="Register">
+    <h2 class="text-4xl font-extrabold">Register</h2>
+    <p class="mt-2 text-espuma-muted">Crea tu cuenta de cliente. Es gratis.</p>
+
+    <x-validation-errors class="mt-6" />
+
+    <form method="POST" action="{{ route('register') }}" class="mt-8 space-y-5">
+        @csrf
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <x-label for="name" value="Nombre completo" class="font-bold" />
+                <x-input id="name" name="name" :value="old('name')" required
+                         class="mt-2 block w-full rounded-lg border-2 border-espuma-navy px-4 py-3" />
+            </div>
+            <div>
+                <x-label for="whatsapp" value="WhatsApp" class="font-bold" />
+                <x-input id="whatsapp" name="whatsapp" :value="old('whatsapp')" placeholder="+52 55 1234 5678"
+                         class="mt-2 block w-full rounded-lg border-2 border-espuma-navy px-4 py-3" />
+            </div>
+        </div>
+
+        <div>
+            <x-label for="email" value="Correo electrónico" class="font-bold" />
+            <x-input id="email" type="email" name="email" :value="old('email')" required
+                     class="mt-2 block w-full rounded-lg border-2 border-espuma-navy px-4 py-3" />
+        </div>
+
+        <div>
+            <x-label for="password" value="Contraseña" class="font-bold" />
+            <x-input id="password" type="password" name="password" required placeholder="Mínimo 6 caracteres"
+                     class="mt-2 block w-full rounded-lg border-2 border-espuma-navy px-4 py-3" />
+        </div>
+
+        <label class="flex items-center gap-3 text-sm">
+            <input type="checkbox" name="terms" required class="rounded border-2 border-espuma-navy text-espuma-navy">
+            Acepto los <a href="{{ route('terms.show') }}" class="font-bold underline">términos</a>
+            y el aviso de privacidad.
+        </label>
+
+        <button type="submit"
+                class="w-full rounded-lg bg-espuma-navy py-4 font-bold text-espuma-yellow shadow-[4px_4px_0_#F5D25F]">
+            Crear cuenta
+        </button>
+    </form>
+
+    <p class="mt-8 text-center text-sm text-espuma-muted">
+        ¿Ya tienes cuenta?
+        <a href="{{ route('login') }}" class="font-bold underline">Inicia sesión</a>
+    </p>
+</x-guest-split>
+<div class="min-h-screen grid md:grid-cols-2 bg-white font-sans text-espuma-navy">
+    <section class="relative hidden md:flex flex-col justify-between bg-espuma-yellow p-12 overflow-hidden">
+        <img src="{{ asset('img/lavanderia.jpg') }}" alt="" class="absolute inset-0 h-full w-full object-cover mix-blend-multiply opacity-40">
+        <div class="relative">
+            <a href="/" class="text-xl font-extrabold">Espuma</a>
+            <h1 class="mt-24 text-5xl font-black leading-tight">{{ $slot->isEmpty() ? '' : 'Tu ropa te espera limpia y doblada.' }}</h1>
+            <p class="mt-6 text-lg">Entra para ver el estado de tus pedidos y agendar la próxima recogida.</p>
+        </div>
+        <p class="relative border-t-2 border-espuma-navy pt-4 text-sm font-bold">
+            Lavado y secado desde $3.50/kg &nbsp;|&nbsp; Entrega en 48 h
+        </p>
+    </section>
+
+    <section class="flex flex-col p-6 md:p-16">
+        <div class="flex items-center justify-end gap-4 text-sm font-bold">
+            <a href="{{ route('register') }}">Registro para clientes</a>
+            <a href="{{ route('login') }}" class="rounded-lg border-2 border-espuma-navy px-4 py-2">Login</a>
+        </div>
+        <div class="my-auto mx-auto w-full max-w-sm">
+            {{ $slot }}
+        </div>
+    </section>
+</div>
+<?php
+
+namespace App\Livewire;
+
+use Livewire\Component;
+
+class PedidoActivo extends Component
+{
+    public $pedido;          // Modelo Pedido con estado, líneas y dirección
+    public string $dia = '';
+    public string $horario = '';
+    public ?int $direccionId = null;
+    public bool $express = false;
+    public bool $agendada = false;
+
+    public function mount($pedido)
+    {
+        $this->pedido = $pedido;
+        $this->direccionId = auth()->user()->direccionPredeterminada?->id;
+    }
+
+    public function agendar()
+    {
+        $this->validate([
+            'dia' => 'required',
+            'horario' => 'required',
+            'direccionId' => 'required|exists:direcciones,id',
+        ]);
+
+        // Aquí guardas la recogida en tu modelo
+        $this->agendada = true;
+    }
+
+    public function render()
+    {
+        return view('livewire.pedido-activo', [
+            'direcciones' => auth()->user()->direcciones,
+            'dias' => collect(range(0, 4))->map(fn ($i) => now()->addDays($i)),
+            'horarios' => ['8:00 – 10:00', '10:00 – 12:00', '16:00 – 18:00', '18:00 – 20:00'],
+        ]);
+    }
+}
+<div class="grid gap-6 xl:grid-cols-[1fr_340px]">
+
+    {{-- Tarjeta del pedido --}}
+    <div class="rounded-2xl border border-espuma-navy bg-white overflow-hidden">
+        <div class="bg-espuma-yellow px-8 py-7">
+            <p class="text-sm font-bold">Pedido #{{ $pedido->codigo }} · {{ $pedido->servicio }} · {{ $pedido->kg }} kg</p>
+            <h2 class="mt-2 text-4xl md:text-5xl font-black tracking-tight">{{ $pedido->estado_texto }}</h2>
+            <p class="mt-3">Entrega estimada: <strong>{{ $pedido->entrega_estimada }}</strong></p>
+        </div>
+
+        {{-- Timeline --}}
+        <ol class="flex items-start justify-between px-8 py-8 text-center text-sm">
+            @foreach (['Recogida', 'Lavado', 'Listo', 'En camino', 'Entregado'] as $i => $paso)
+                @php
+                    $actual = $pedido->paso_actual; // 1..5
+                    $hecho = $i + 1 < $actual;
+                    $activo = $i + 1 === $actual;
+                @endphp
+                <li class="flex flex-1 flex-col items-center relative">
+                    <span class="z-10 flex h-10 w-10 items-center justify-center rounded-full border-2
+                        {{ $hecho ? 'border-espuma-navy bg-espuma-navy text-white' : '' }}
+                        {{ $activo ? 'border-espuma-navy bg-espuma-yellow font-bold' : '' }}
+                        {{ !$hecho && !$activo ? 'border-espuma-navy/20 text-espuma-muted' : '' }}">
+                        {{ $hecho ? '✓' : $i + 1 }}
+                    </span>
+                    <span class="mt-2 {{ $hecho || $activo ? 'font-bold' : 'text-espuma-muted' }}">{{ $paso }}</span>
+                </li>
+            @endforeach
+        </ol>
+
+        <div class="grid gap-8 border-t border-espuma-navy/15 p-8 md:grid-cols-2">
+            <div>
+                <h3 class="font-bold">Detalle</h3>
+                <ul class="mt-4 divide-y divide-espuma-navy/15">
+                    @foreach ($pedido->lineas as $linea)
+                        <li class="flex justify-between py-3">
+                            <div>
+                                <p class="font-bold">{{ $linea->nombre }}</p>
+                                <p class="text-xs text-espuma-muted">{{ $linea->cantidad }} × ${{ number_format($linea->precio_unitario, 2) }}</p>
+                            </div>
+                            <span class="font-bold">${{ number_format($linea->subtotal, 2) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+                <div class="mt-4 flex justify-between border-t border-espuma-navy pt-4 font-bold">
+                    <span>Total</span>
+                    <span class="text-2xl font-black">${{ number_format($pedido->total, 2) }}</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-4">
+                <div class="space-y-4 text-sm">
+                    <div class="flex gap-3">
+                        <span class="text-espuma-muted">📍</span>
+                        <div>
+                            <p class="text-xs text-espuma-muted">Entregamos en</p>
+                            <p class="font-bold">{{ $pedido->direccion->linea }}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <span class="text-espuma-muted">🕒</span>
+                        <div>
+                            <p class="text-xs text-espuma-muted">Recogido</p>
+                            <p class="font-bold">{{ $pedido->recogido_en }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-auto space-y-3">
+                    @if ($pedido->pendiente_pago)
+                        <button wire:click="$dispatch('abrir-pago')"
+                                class="w-full rounded-lg bg-espuma-navy py-3.5 font-bold text-espuma-yellow shadow-[3px_3px_0_#F5D25F]">
+                            Pagar ${{ number_format($pedido->total, 2) }}
+                        </button>
+                    @endif
+                    <a href="https://wa.me/{{ config('services.whatsapp.number') }}"
+                       class="block w-full rounded-lg bg-espuma-green py-3.5 text-center font-bold">
+                        Escríbenos por WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Agendar recogida --}}
+    <aside class="rounded-2xl border border-espuma-navy bg-white h-fit">
+        @if ($agendada)
+            <div class="p-6">
+                <span class="flex h-12 w-12 items-center justify-center rounded-full bg-espuma-yellow font-bold">✓</span>
+                <h3 class="mt-4 text-lg font-extrabold">¡Recogida agendada!</h3>
+                <p class="mt-2 text-sm">{{ $dia }}, {{ $horario }}. Te avisamos por WhatsApp cuando el repartidor vaya en camino.</p>
+                <button wire:click="$set('agendada', false)" class="mt-4 text-sm font-bold underline">Agendar otra</button>
+            </div>
+        @else
+            <div class="border-b border-espuma-navy/15 p-6">
+                <h3 class="text-lg font-extrabold">Agendar recogida</h3>
+                <p class="text-sm text-espuma-muted">Pasamos por tu ropa en la franja que elijas.</p>
+            </div>
+
+            <form wire:submit="agendar" class="space-y-5 p-6">
+                <div>
+                    <p class="text-sm font-bold">Día</p>
+                    <div class="mt-2 grid grid-cols-5 gap-2">
+                        @foreach ($dias as $d)
+                            <button type="button" wire:click="$set('dia', '{{ $d->format('Y-m-d') }}')"
+                                    class="rounded-lg border py-2 text-center text-xs
+                                           {{ $dia === $d->format('Y-m-d') ? 'bg-espuma-navy text-espuma-yellow border-espuma-navy' : 'border-espuma-navy/20' }}">
+                                <span class="block uppercase">{{ $d->isoFormat('ddd') }}</span>
+                                <span class="block text-lg font-black">{{ $d->format('d') }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-sm font-bold">Horario</p>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                        @foreach ($horarios as $h)
+                            <button type="button" wire:click="$set('horario', '{{ $h }}')"
+                                    class="rounded-lg border py-2.5 text-sm font-semibold
+                                           {{ $horario === $h ? 'bg-espuma-navy text-espuma-yellow border-espuma-navy' : 'border-espuma-navy/20' }}">
+                                {{ $h }}
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div>
+                    <label for="direccion" class="text-sm font-bold">Dirección</label>
+                    <select id="direccion" wire:model="direccionId"
+                            class="mt-2 w-full rounded-lg border-2 border-espuma-navy px-3 py-2.5 text-sm">
+                        @foreach ($direcciones as $dir)
+                            <option value="{{ $dir->id }}">{{ $dir->etiqueta }} — {{ $dir->linea }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <label class="flex items-start gap-3">
+                    <input type="checkbox" wire:model="express" class="mt-1 rounded border-2 border-espuma-navy">
+                    <span>
+                        <span class="block font-bold">Servicio exprés (+50%)</span>
+                        <span class="text-xs text-espuma-muted">Listo el mismo día.</span>
+                    </span>
+                </label>
+
+                <button type="submit"
+                        class="w-full rounded-lg bg-espuma-navy py-3.5 font-bold text-espuma-yellow shadow-[3px_3px_0_#F5D25F]">
+                    Agendar recogida
+                </button>
+            </form>
+        @endif
+    </aside>
+
+    {{-- Pedidos anteriores --}}
+    <section class="xl:col-span-2">
+        <div class="flex items-end justify-between">
+            <h3 class="text-lg font-extrabold">Pedidos anteriores</h3>
+            <a href="{{ route('pedidos.index') }}" class="text-sm font-bold underline">Ver todos</a>
+        </div>
+        <ul class="mt-4 divide-y divide-espuma-navy/15 border-y border-espuma-navy">
+            @foreach ($anteriores as $ant)
+                <li class="flex items-center gap-6 py-4 text-sm">
+                    <span class="w-24 font-bold">#{{ $ant->codigo }}</span>
+                    <span class="flex-1 text-espuma-muted">{{ $ant->servicio }} · {{ $ant->fecha->translatedFormat('j M Y') }}</span>
+                    <span class="font-bold">${{ number_format($ant->total, 2) }}</span>
+                    <form method="POST" action="{{ route('pedidos.repetir', $ant) }}">
+                        @csrf
+                        <button class="rounded-lg border-2 border-espuma-navy px-3 py-1.5 text-xs font-bold hover:bg-espuma-navy hover:text-white">
+                            ↻ Repetir
+                        </button>
+                    </form>
+                </li>
+            @endforeach
+        </ul>
+    </section>
+</div>
+<?php
+
+namespace App\Livewire;
+
+use Livewire\Attributes\On;
+use Livewire\Component;
+
+class ModalPago extends Component
+{
+    public bool $abierto = false;
+    public $pedido;
+    public string $metodo = 'tarjeta';     // tarjeta | transferencia | efectivo
+    public string $tarjeta = 'visa-4242';  // id de la tarjeta guardada
+
+    #[On('abrir-pago')]
+    public function abrir(): void
+    {
+        $this->abierto = true;
+    }
+
+    public function cerrar(): void
+    {
+        $this->abierto = false;
+    }
+
+    public function confirmar(): void
+    {
+        // Procesa el pago según $metodo y marca el pedido como pagado
+        $this->abierto = false;
+        $this->dispatch('pago-confirmado');
+    }
+
+    public function render()
+    {
+        return view('livewire.modal-pago', [
+            'tarjetas' => [
+                ['id' => 'visa-4242', 'marca' => 'Visa', 'ult' => '4242', 'vence' => '08/28'],
+                ['id' => 'mc-1881', 'marca' => 'Mastercard', 'ult' => '1881', 'vence' => '02/27'],
+            ],
+        ]);
+    }
+}
+<div>
+    @if ($abierto)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-espuma-navy/40 p-4"
+             x-data x-on:keydown.escape.window="$wire.cerrar()">
+            <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white border border-espuma-navy shadow-xl"
+                 @click.outside="$wire.cerrar()">
+
+                <div class="relative bg-espuma-yellow px-6 py-5">
+                    <p class="text-sm font-bold">Pagar pedido #{{ $pedido->codigo }}</p>
+                    <p class="text-4xl font-black tracking-tight">${{ number_format($pedido->total, 2) }}</p>
+                    <p class="text-sm">{{ $pedido->servicio }} · {{ $pedido->kg }} kg</p>
+                    <button wire:click="cerrar" class="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg border-2 border-espuma-navy bg-white" aria-label="Cerrar">✕</button>
+                </div>
+
+                <div class="space-y-5 p-6">
+                    <p class="font-bold text-sm">Método de pago</p>
+
+                    {{-- Tabs de método --}}
+                    <div class="grid grid-cols-3 gap-2">
+                        @foreach (['tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia', 'efectivo' => 'Efectivo'] as $valor => $label)
+                            <button type="button" wire:click="$set('metodo', '{{ $valor }}')"
+                                    class="rounded-lg border py-3 text-xs font-bold transition
+                                        {{ $metodo === $valor ? 'bg-espuma-navy text-espuma-yellow border-espuma-navy' : 'border-espuma-navy/20 hover:border-espuma-navy' }}">
+                                {{ $label }}
+                            </button>
+                        @endforeach
+                    </div>
+
+                    @if ($metodo === 'tarjeta')
+                        <div class="space-y-2">
+                            @foreach ($tarjetas as $t)
+                                <label class="flex cursor-pointer items-center justify-between rounded-lg border px-4 py-3
+                                    {{ $tarjeta === $t['id'] ? 'border-espuma-navy bg-espuma-yellow/20' : 'border-espuma-navy/20' }}">
+                                    <span class="flex items-center gap-3 text-sm font-bold">
+                                        <input type="radio" wire:model="tarjeta" value="{{ $t['id'] }}" class="text-espuma-navy">
+                                        {{ $t['marca'] }} •••• {{ $t['ult'] }}
+                                    </span>
+                                    <span class="text-xs text-espuma-muted">{{ $t['vence'] }}</span>
+                                </label>
+                            @endforeach
+                            <button type="button" class="w-full rounded-lg border px-4 py-3 text-left text-sm font-bold border-espuma-navy/20">
+                                Usar otra tarjeta
+                            </button>
+                        </div>
+
+                    @elseif ($metodo === 'transferencia')
+                        <dl class="divide-y divide-espuma-navy/15 rounded-lg border border-espuma-navy text-sm">
+                            <div class="flex justify-between px-4 py-3"><dt class="text-espuma-muted">Banco</dt><dd class="font-bold">BBVA</dd></div>
+                            <div class="flex items-center justify-between px-4 py-3">
+                                <dt class="text-espuma-muted">CLABE</dt>
+                                <dd class="flex items-center gap-2 font-bold">
+                                    012 180 0012 3456 7890
+                                    <button type="button" x-data x-on:click="navigator.clipboard.writeText('012180001234567890')" class="text-espuma-muted" title="Copiar">⧉</button>
+                                </dd>
+                            </div>
+                            <div class="flex justify-between px-4 py-3"><dt class="text-espuma-muted">Beneficiario</dt><dd class="font-bold">Espuma Lavandería S.A. de C.V.</dd></div>
+                            <div class="flex justify-between px-4 py-3"><dt class="text-espuma-muted">Concepto</dt><dd class="font-bold">{{ $pedido->codigo }}</dd></div>
+                        </dl>
+
+                    @else
+                        <div class="rounded-lg bg-espuma-yellow/30 px-4 py-3 text-sm">
+                            Paga <strong>${{ number_format($pedido->total, 2) }}</strong> al repartidor cuando te entreguemos la ropa.
+                            Por favor ten el monto exacto.
+                        </div>
+                    @endif
+
+                    <button wire:click="confirmar"
+                            class="w-full rounded-lg bg-espuma-navy py-3.5 font-bold text-espuma-yellow shadow-[3px_3px_0_#F5D25F]">
+                        @switch($metodo)
+                            @case('tarjeta') Pagar ${{ number_format($pedido->total, 2) }} @break
+                            @case('transferencia') Ya hice la transferencia @break
+                            @default Pagar al recibir
+                        @endswitch
+                    </button>
+                    <p class="text-center text-xs text-espuma-muted">🔒 Pago seguro. No guardamos el CVC.</p>
+                </div>
+            </div>
+        </div>
+    @endif
+</div>
+<x-cliente-layout heading="Mis pedidos">
+    @if ($enCurso)
+        <h2 class="text-lg font-extrabold">En curso</h2>
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-espuma-navy bg-white px-6 py-5">
+            <div>
+                <div class="flex items-center gap-3">
+                    <span class="font-extrabold">#{{ $enCurso->codigo }}</span>
+                    <span class="rounded-full bg-espuma-yellow px-3 py-0.5 text-xs font-bold">{{ $enCurso->estado_texto }}</span>
+                </div>
+                <p class="mt-1 text-sm text-espuma-muted">{{ $enCurso->servicio }} · {{ $enCurso->kg }} kg · Entrega {{ $enCurso->entrega_estimada }}</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-2xl font-black">${{ number_format($enCurso->total, 2) }}</span>
+                @if ($enCurso->pendiente_pago)
+                    <span class="text-sm font-bold text-red-700">Por pagar</span>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    <div class="mt-10 flex items-end justify-between">
+        <h2 class="text-lg font-extrabold">Entregados</h2>
+        <span class="text-sm text-espuma-muted">{{ $entregados->count() }} pedidos</span>
+    </div>
+
+    <div class="mt-3 overflow-hidden rounded-2xl border border-espuma-navy bg-white">
+        <table class="w-full text-sm">
+            <thead class="text-left text-xs text-espuma-muted">
+                <tr class="border-b border-espuma-navy/15">
+                    <th class="px-6 py-3 font-medium">Pedido</th>
+                    <th class="px-6 py-3 font-medium">Fecha</th>
+                    <th class="px-6 py-3 font-medium">Servicio</th>
+                    <th class="px-6 py-3 text-right font-medium">Total</th>
+                    <th class="px-6 py-3 font-medium">Estado</th>
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-espuma-navy/15">
+                @foreach ($entregados as $p)
+                    <tr>
+                        <td class="px-6 py-4 font-bold">#{{ $p->codigo }}</td>
+                        <td class="px-6 py-4">{{ $p->fecha->translatedFormat('j M Y') }}</td>
+                        <td class="px-6 py-4">{{ $p->servicio }}</td>
+                        <td class="px-6 py-4 text-right font-bold">${{ number_format($p->total, 2) }}</td>
+                        <td class="px-6 py-4">
+                            <span class="rounded-full border border-espuma-navy/20 px-2.5 py-0.5 text-xs text-espuma-muted">Entregado</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <form method="POST" action="{{ route('pedidos.repetir', $p) }}">
+                                @csrf
+                                <button class="rounded-lg border-2 border-espuma-navy px-3 py-1.5 text-xs font-bold hover:bg-espuma-navy hover:text-white">↻ Repetir</button>
+                            </form>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</x-cliente-layout>
+Para que las vistas de la app usen el layout, crea resources/views/components/cliente-layout.blade.php con este contenido, que simplemente delega en el layout anterior:
+
+blade
+@props(['heading' => null])
+<x-layouts.cliente :heading="$heading">
+    {{ $slot }}
+</x-layouts.cliente>
+
+<x-layouts.cliente heading="Pagos">
+    <div class="grid gap-6 xl:grid-cols-[1fr_340px]">
+        <div>
+            <div class="flex flex-wrap items-center justify-between gap-6 rounded-2xl bg-espuma-yellow px-8 py-7 border border-espuma-navy">
+                <div>
+                    <p class="text-sm font-bold">Saldo pendiente</p>
+                    <p class="text-5xl font-black tracking-tight">${{ number_format($saldo, 2) }}</p>
+                    <p class="mt-1 text-sm">Pedido #{{ $pedidoPendiente->codigo }} · {{ $pedidoPendiente->servicio }} · {{ $pedidoPendiente->kg }} kg</p>
+                </div>
+                <button wire:click="$dispatch('abrir-pago')"
+                        class="rounded-lg bg-espuma-navy px-6 py-3 font-bold text-espuma-yellow">Pagar ahora</button>
+            </div>
+
+            <h2 class="mt-10 text-lg font-extrabold">Recibos</h2>
+            <div class="mt-3 overflow-hidden rounded-2xl border border-espuma-navy bg-white">
+                <table class="w-full text-sm">
+                    <thead class="text-left text-xs text-espuma-muted border-b border-espuma-navy/15">
+                        <tr>
+                            <th class="px-6 py-3 font-medium">Fecha</th>
+                            <th class="px-6 py-3 font-medium">Pedido</th>
+                            <th class="px-6 py-3 font-medium">Método</th>
+                            <th class="px-6 py-3 text-right font-medium">Monto</th>
+                            <th class="px-6 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-espuma-navy/15">
+                        @foreach ($recibos as $r)
+                            <tr>
+                                <td class="px-6 py-4">{{ $r->fecha->translatedFormat('j M Y') }}</td>
+                                <td class="px-6 py-4 font-bold">#{{ $r->pedido->codigo }}</td>
+                                <td class="px-6 py-4">{{ $r->metodo_texto }}</td>
+                                <td class="px-6 py-4 text-right font-bold">${{ number_format($r->monto, 2) }}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <a href="{{ route('recibos.descargar', $r) }}" class="text-espuma-muted hover:text-espuma-navy" title="Descargar">⭳</a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <aside class="h-fit rounded-2xl border border-espuma-navy bg-white">
+            <h3 class="border-b border-espuma-navy/15 px-6 py-5 text-lg font-extrabold">Métodos de pago</h3>
+            <ul class="divide-y divide-espuma-navy/15">
+                @foreach ($tarjetas as $t)
+                    <li class="flex items-center justify-between px-6 py-4">
+                        <div>
+                            <p class="font-bold">{{ $t->marca }} •••• {{ $t->ultimos }}</p>
+                            <p class="text-xs text-espuma-muted">Vence {{ $t->vence }}</p>
+                        </div>
+                        @if ($t->predeterminada)
+                            <span class="rounded bg-espuma-yellow px-2 py-0.5 text-[10px] font-bold uppercase">Predeterminada</span>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+            <div class="p-4">
+                <a href="{{ route('pagos.tarjetas.create') }}"
+                   class="block rounded-lg border-2 border-espuma-navy py-3 text-center text-sm font-bold hover:bg-espuma-navy hover:text-white">
+                    + Agregar tarjeta
+                </a>
+            </div>
+        </aside>
+    </div>
+</x-layouts.cliente>
+<x-layouts.cliente heading="Direcciones">
+    <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        @foreach ($direcciones as $d)
+            <div class="rounded-2xl border border-espuma-navy bg-white p-6">
+                <div class="flex items-center gap-2">
+                    <span>📍</span>
+                    <h3 class="text-lg font-extrabold">{{ $d->etiqueta }}</h3>
+                    @if ($d->predeterminada)
+                        <span class="rounded bg-espuma-yellow px-2 py-0.5 text-[10px] font-bold uppercase">Predeterminada</span>
+                    @endif
+                </div>
+                <p class="mt-3 text-sm font-bold">{{ $d->linea }}</p>
+                @if ($d->referencia)
+                    <p class="mt-1 text-sm text-espuma-muted">{{ $d->referencia }}</p>
+                @endif
+
+                <div class="mt-6 flex gap-4 text-sm font-bold underline">
+                    <a href="{{ route('direcciones.edit', $d) }}">Editar</a>
+                    @unless ($d->predeterminada)
+                        <form method="POST" action="{{ route('direcciones.destroy', $d) }}">
+                            @csrf @method('DELETE')
+                            <button class="text-red-700">Eliminar</button>
+                        </form>
+                    @endunless
+                </div>
+            </div>
+        @endforeach
+
+        <a href="{{ route('direcciones.create') }}"
+           class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-espuma-navy/40 p-6 text-sm font-bold hover:bg-white">
+            <span class="text-2xl">+</span>
+            Agregar dirección
+        </a>
+    </div>
+</x-layouts.cliente>
+<x-layouts.cliente heading="Perfil">
+    <div class="flex flex-wrap gap-6">
+        <form method="POST" action="{{ route('perfil.update') }}"
+              class="w-full max-w-md rounded-2xl border border-espuma-navy bg-white p-6 space-y-5">
+            @csrf @method('PUT')
+            <h2 class="text-lg font-extrabold">Datos personales</h2>
+
+            <div>
+                <label class="text-sm font-bold">Nombre completo</label>
+                <input name="name" value="{{ old('name', $user->name) }}"
+                       class="mt-2 w-full rounded-lg border-2 border-espuma-navy px-4 py-2.5">
+            </div>
+            <div>
+                <label class="text-sm font-bold">WhatsApp</label>
+                <input name="whatsapp" value="{{ old('whatsapp', $user->whatsapp) }}"
+                       class="mt-2 w-full rounded-lg border-2 border-espuma-navy px-4 py-2.5">
+            </div>
+            <div>
+                <label class="text-sm font-bold">Correo electrónico</label>
+                <input name="email" type="email" value="{{ old('email', $user->email) }}"
+                       class="mt-2 w-full rounded-lg border-2 border-espuma-navy px-4 py-2.5">
+            </div>
+        </form>
+
+        <form method="POST" action="{{ route('perfil.notificaciones') }}"
+              class="w-full max-w-sm rounded-2xl border border-espuma-navy bg-white p-6 space-y-5">
+            @csrf @method('PUT')
+            <h2 class="text-lg font-extrabold">Notificaciones</h2>
+
+            @foreach ([
+                'notif_whatsapp_lista' => 'Avisarme por WhatsApp cuando mi ropa esté lista',
+                'notif_en_camino' => 'Avisarme cuando el repartidor vaya en camino',
+                'notif_promos' => 'Recibir promociones y descuentos',
+            ] as $campo => $texto)
+                <label class="flex items-start gap-3 text-sm">
+                    <input type="checkbox" name="{{ $campo }}" value="1" @checked($user->$campo)
+                           class="mt-0.5 rounded border-2 border-espuma-navy text-espuma-navy">
+                    {{ $texto }}
+                </label>
+            @endforeach
+
+            <button class="w-full rounded-lg bg-espuma-navy py-3.5 font-bold text-espuma-yellow shadow-[3px_3px_0_#F5D25F]">
+                Guardar cambios
+            </button>
+        </form>
+    </div>
+</x-layouts.cliente>
